@@ -330,6 +330,128 @@ macro(set_clientlib_target_properties GNS_TARGET)
 
 endmacro()
 
+# Set properties on a clientlib target (either shared or static library)
+macro(set_framework_target_properties GNS_TARGET)
+
+	target_sources(${GNS_TARGET} PRIVATE
+		${GNS_COMMON_SRCS}
+		${GNS_CLIENTLIB_SRCS}
+		${GNS_COMMON_PROTO_SRCS}
+		${GNS_CLIENTLIB_PROTO_SRCS})
+
+	set_target_common_gns_properties( ${GNS_TARGET} )
+
+	set_target_properties(${GNS_TARGET} PROPERTIES
+		FRAMEWORK TRUE
+	)
+
+	target_include_directories(${GNS_TARGET} PUBLIC
+		"$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../include>"
+		"$<INSTALL_INTERFACE:$<INSTALL_PREFIX>/${CMAKE_INSTALL_INCLUDEDIR}/GameNetworkingSockets>"
+		)
+
+	target_include_directories(${GNS_TARGET} PRIVATE
+		"common"
+		"public"
+		${CMAKE_CURRENT_BINARY_DIR}
+		)
+
+	gns_set_target_protobuf_properties(${GNS_TARGET})
+	gns_set_target_crypto_properties(${GNS_TARGET})
+
+	target_compile_definitions(${GNS_TARGET} PRIVATE
+		STEAMNETWORKINGSOCKETS_FOREXPORT )
+
+	# Enable ICE?
+	if(ENABLE_ICE)
+		target_compile_definitions(${GNS_TARGET} PRIVATE STEAMNETWORKINGSOCKETS_ENABLE_ICE )
+	endif()
+
+	# Enable WebRTC as ICE client?
+	if(USE_STEAMWEBRTC)
+		if(NOT ENABLE_ICE)
+			message(FATAL_ERROR "USE_STEAMWEBRTC requires ENABLE_ICE")
+		endif()
+
+		# Wrapper lib is always linked statically in the opensource code.
+		# We might link dynamically in other environments.
+		target_compile_definitions(${GNS_TARGET} PRIVATE
+			STEAMWEBRTC_USE_STATIC_LIBS
+			)
+		target_link_libraries(${GNS_TARGET} PUBLIC
+			$<BUILD_INTERFACE:steamwebrtc>
+			$<INSTALL_INTERFACE:GameNetworkingSockets::steamwebrtc>
+			)
+	endif()
+
+	## Needs CMake 3.8, then we could get rid of the workaround below it.
+	#target_compile_features(${GNS_TARGET} PUBLIC c_std_99 cxx_std_11)
+	if(NOT CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
+		target_compile_features(${GNS_TARGET} PUBLIC ${C99_FEATURES} ${CXX11_FEATURES})
+	endif()
+
+	if(CMAKE_CXX_COMPILER_ID MATCHES "GNU"
+			OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+		foreach(FLAG ${GNS_COMMON_FLAGS} ${GNS_C_FLAGS})
+			string(MAKE_C_IDENTIFIER ${FLAG} FLAG_ID)
+			check_c_compiler_flag(${FLAG} ${FLAG_ID}_TEST)
+			if(${FLAG_ID}_TEST)
+				target_compile_options(${GNS_TARGET} PRIVATE
+					$<$<COMPILE_LANGUAGE:C>:${FLAG}>)
+			endif()
+		endforeach()
+
+		foreach(FLAG ${GNS_COMMON_FLAGS} ${GNS_CXX_FLAGS})
+			string(MAKE_C_IDENTIFIER ${FLAG} FLAG_ID)
+			check_cxx_compiler_flag(${FLAG} ${FLAG_ID}_TEST)
+			if(${FLAG_ID}_TEST)
+				target_compile_options(${GNS_TARGET} PRIVATE
+					$<$<COMPILE_LANGUAGE:CXX>:${FLAG}>
+					)
+			endif()
+		endforeach()
+	endif()
+
+	if(CMAKE_SYSTEM_NAME MATCHES Linux)
+		#if(USE_STEAMWEBRTC AND NOT STEAMWEBRTC_USE_STATIC_LIBS)
+		#	target_link_libraries(${GNS_TARGET} PRIVATE dl)
+		#endif()
+	elseif(CMAKE_SYSTEM_NAME MATCHES Darwin)
+		#if(USE_STEAMWEBRTC AND NOT STEAMWEBRTC_USE_STATIC_LIBS)
+		#	target_link_libraries(${GNS_TARGET} PRIVATE dl)
+		#endif()
+	elseif(CMAKE_SYSTEM_NAME MATCHES FreeBSD)
+
+	elseif(CMAKE_SYSTEM_NAME MATCHES Windows)
+		if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
+			get_target_property(TARGET_TYPE ${GNS_TARGET} TYPE)
+			if(NOT TARGET_TYPE STREQUAL STATIC_LIBRARY)
+				target_compile_options(${GNS_TARGET} PRIVATE
+					/GL       # Enable link-time code generation
+					)
+				set_target_properties(${GNS_TARGET} PROPERTIES LINK_FLAGS "/LTCG /SUBSYSTEM:WINDOWS")
+			endif()
+		endif()
+		target_link_libraries(${GNS_TARGET} PUBLIC ws2_32 crypt32 winmm Iphlpapi)
+		if(USE_CRYPTO STREQUAL "BCrypt")
+			target_link_libraries(${GNS_TARGET} PUBLIC bcrypt)
+		endif()
+	else()
+		message(FATAL_ERROR "Could not identify your target operating system")
+	endif()
+
+	add_sanitizers(${GNS_TARGET})
+
+	# install(
+	# 	TARGETS ${GNS_TARGET}
+	# 	EXPORT GameNetworkingSockets
+	# 	LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+	# 	ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+	# 	RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+	# 	)
+
+endmacro()
+
 if (BUILD_SHARED_LIB)
 	add_library(GameNetworkingSockets SHARED "")
 	add_library(GameNetworkingSockets::GameNetworkingSockets ALIAS GameNetworkingSockets)
@@ -344,6 +466,18 @@ if (BUILD_STATIC_LIB)
 	target_compile_definitions(GameNetworkingSockets_s INTERFACE STEAMNETWORKINGSOCKETS_STATIC_LINK)
 	set_clientlib_target_properties(GameNetworkingSockets_s)
 endif()
+
+add_library(GameNetworkingSocketsFramework SHARED "")
+set_framework_target_properties(GameNetworkingSocketsFramework)
+
+# project(GameNetworkingSocketsFramework)
+# target_link_libraries(GameNetworkingSocketsFramework GameNetworkingSockets)
+# set_target_properties(GameNetworkingSocketsFramework PROPERTIES
+# 	FRAMEWORK TRUE
+# 	FRAMEWORK_VERSION C
+# 	MACOSX_FRAMEWORK_IDENTIFIER games.lowkick.GameNetworkingSocketsFramework
+# 	MACOSX_FRAMEWORK_INFO_PLIST Info.plist
+# )
 
 #
 # Cert tool

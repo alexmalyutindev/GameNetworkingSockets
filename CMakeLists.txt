@@ -229,3 +229,11 @@ message(STATUS "Crypto library for AES/SHA256: ${USE_CRYPTO}")
 message(STATUS "Crypto library for ed25519/curve25519: ${USE_CRYPTO25519}")
 message(STATUS "Link-time optimization: ${LTO}")
 #message(STATUS "---------------------------------------------------------")
+
+project(GameNetworkingSocketsFramework)
+# set_target_properties(GameNetworkingSockets PROPERTIES
+# 	FRAMEWORK TRUE
+# 	FRAMEWORK_VERSION C
+# 	MACOSX_FRAMEWORK_IDENTIFIER com.cmake.dynamicFramework
+#   	MACOSX_FRAMEWORK_INFO_PLIST Info.plist
+# )
