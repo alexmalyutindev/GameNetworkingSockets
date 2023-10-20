@@ -331,7 +331,7 @@ macro(set_clientlib_target_properties GNS_TARGET)
 endmacro()
 
 # Set properties on a clientlib target (either shared or static library)
-macro(set_framework_target_properties GNS_TARGET)
+macro(set_bundle_target_properties GNS_TARGET)
 
 	target_sources(${GNS_TARGET} PRIVATE
 		${GNS_COMMON_SRCS}
@@ -355,6 +355,7 @@ macro(set_framework_target_properties GNS_TARGET)
 		MACOSX_BUNDLE_BUNDLE_NAME "libGameNetworkingSockets"
 		MACOSX_BUNDLE_BUNDLE_VERSION "1.0.0"
 		MACOSX_BUNDLE_INFO_PLIST "${CMAKE_CURRENT_SOURCE_DIR}/../Info.plist"
+		EXECUTABLE_SUFFIX ".bundle"
 	)
 
 	# set_target_properties(${GNS_TARGET} PROPERTIES
@@ -487,7 +488,7 @@ if (BUILD_STATIC_LIB)
 endif()
 
 add_library(libGameNetworkingSockets MODULE "")
-set_framework_target_properties(libGameNetworkingSockets)
+set_bundle_target_properties(libGameNetworkingSockets)
 
 # project(GameNetworkingSocketsFramework)
 # target_link_libraries(GameNetworkingSocketsFramework GameNetworkingSockets)

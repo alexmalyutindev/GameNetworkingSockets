@@ -4,7 +4,7 @@
 # xcodebuild -project GameNetworkingSockets.xcodeproj -target GameNetworkingSockets -sdk macosx -configuration Release clean build
 
 
-cmake -G "Xcode" -T buildsystem=1 \
+cmake -GXcode -T buildsystem=1 \
     -DCMAKE_BUILD_TYPE=Release \
     -DCMAKE_CONFIGURATION_TYPES=Release ..
 
