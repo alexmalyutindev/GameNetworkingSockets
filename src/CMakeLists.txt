@@ -348,11 +348,15 @@ macro(set_bundle_target_properties GNS_TARGET)
 	# 	MACOSX_FRAMEWORK_INFO_PLIST "${CMAKE_CURRENT_SOURCE_DIR}/../Info.plist"
 	# )
 
+	set (CMAKE_SHARED_LIBRARY_PREFIX "")
+    set (CMAKE_SHARED_MODULE_PREFIX "")
+    set (CMAKE_SHARED_LIBRARY_SUFFIX ".bundle")
+
 	set_target_properties(${GNS_TARGET} PROPERTIES
 		BUNDLE TRUE
 		MACOSX_BUNDLE TRUE
-		MACOSX_BUNDLE_GUI_IDENTIFIER "games.lowkick.libGameNetworkingSockets"
-		MACOSX_BUNDLE_BUNDLE_NAME "libGameNetworkingSockets"
+		MACOSX_BUNDLE_GUI_IDENTIFIER "games.lowkick.GameNetworkingSockets"
+		MACOSX_BUNDLE_BUNDLE_NAME "GameNetworkingSockets"
 		MACOSX_BUNDLE_BUNDLE_VERSION "1.0.0"
 		MACOSX_BUNDLE_INFO_PLIST "${CMAKE_CURRENT_SOURCE_DIR}/../Info.plist"
 		EXECUTABLE_SUFFIX ".bundle"
@@ -487,7 +491,7 @@ if (BUILD_STATIC_LIB)
 	set_clientlib_target_properties(GameNetworkingSockets_s)
 endif()
 
-add_library(libGameNetworkingSockets MODULE "")
+add_library(libGameNetworkingSockets SHARED "")
 set_bundle_target_properties(libGameNetworkingSockets)
 
 # project(GameNetworkingSocketsFramework)
